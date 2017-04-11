@@ -1,7 +1,6 @@
 package com.twitter.finagle
 package samantha.protocol
 
-import com.twitter.finagle.samantha.transport.Message._
 import com.twitter.finagle.util.BufReader
 import com.twitter.io.Buf
 import java.nio.charset.StandardCharsets

@@ -9,6 +9,7 @@ import com.twitter.finagle.netty4.Netty4Transporter
 import com.twitter.finagle.param.{ExceptionStatsHandler => _, Monitor => _, ResponseClassifier => _, Tracer => _, _}
 import com.twitter.finagle.transport.Transport
 import com.twitter.finagle.samantha.ConnectionPool
+import com.twitter.finagle.samantha.feedback.NetworkTransport
 import com.twitter.finagle.samantha.protocol._
 import com.twitter.finagle.service.{ResponseClassifier, RetryBudget}
 import com.twitter.finagle.stats.{ExceptionStatsHandler, StatsReceiver}

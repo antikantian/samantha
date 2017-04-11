@@ -1,7 +1,6 @@
 package com.twitter.finagle.samantha.protocol
 
 import com.twitter.finagle.samantha.protocol.Stage._
-import com.twitter.finagle.samantha.transport.Message._
 import com.twitter.finagle.util.BufReader
 import com.twitter.io.Buf
 import scala.annotation.tailrec

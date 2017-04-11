@@ -2,6 +2,7 @@ package com.twitter.finagle.samantha.feedback
 
 import java.util.concurrent.atomic.AtomicReference
 
+import com.twitter.concurrent.Broker
 import com.twitter.finagle.dispatch.GenSerialClientDispatcher
 import com.twitter.finagle.samantha.protocol._
 import com.twitter.finagle.transport.Transport
@@ -14,17 +15,25 @@ class FeedbackDispatcher(trans: Transport[Command, Feedback])
   
   private val handler = new AtomicReference[FeedbackHandler]
   
-  loop()
-  
-  private[this] def loop(): Unit =
-    trans.read().onSuccess { fb =>
-      println(fb)
-      //handler.get().onFeedback(fb)
+  private[this] def processAndRead: Feedback => Future[Unit] =
+    fb => {
+      println(s"[Dispatcher]Inbound: $fb")
       loop()
-    }.onFailure {
-      case NonFatal(ex) =>
-        Option(handler.get()).foreach(_.onException(this, ex))
     }
+
+  private[this] def loop(): Future[Unit] = trans.read().flatMap(processAndRead)
+  
+  loop().onFailure { _ => trans.close() }
+  
+//  private[this] def loop(): Unit =
+//    trans.read().onSuccess { fb =>
+//      println(fb)
+//      //handler.get().onFeedback(fb)
+//      loop()
+//    }.onFailure {
+//      case NonFatal(ex) =>
+//        Option(handler.get()).foreach(_.onException(this, ex))
+//    }
   
   protected def dispatch(req: Command, p: Promise[Feedback]): Future[Unit] = {
     trans.write(req)
