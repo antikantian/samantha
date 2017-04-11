@@ -16,7 +16,6 @@ private[finagle] final class StageTransport(underlying: Transport[Buf, Buf])
   private[this] def readLoop(buf: Buf): Future[Feedback] = decoder.absorb(buf) match {
     case null => underlying.read().flatMap(readLoop)
     case reply =>
-      println(reply)
       Future.value(reply)
   }
   

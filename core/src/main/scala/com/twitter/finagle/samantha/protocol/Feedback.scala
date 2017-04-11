@@ -59,7 +59,9 @@ object Feedback {
       })
     }
   
-  private[samantha] val decode = Stage.readBytes(1)(_ => NextStep.Goto(decodeTextual))
+  private[samantha] val decode = Stage.readAllBytes(_ => NextStep.Goto(decodeTextual))
+  
+  //Stage.readBytes(1)(_ => NextStep.Goto(decodeTextual))
   
 //  private[samantha] val decode = Stage.readBytes(1) {
 //    case STATUS_REPLY => NextStep.Goto(decodeTextual)

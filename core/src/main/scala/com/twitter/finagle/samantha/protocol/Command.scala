@@ -28,6 +28,19 @@ object Command {
   }
 }
 
+case class GlobalCacheCommand(data: String) extends Command {
+  def name: Buf = Buf.Utf8(data)
+}
+
+case class HexCommand(data: String) extends Command {
+  def name: Buf = Buf.Utf8(data)
+}
+
+case class NetworkCommand(data: String) extends Command {
+  def name: Buf = Buf.Utf8(data)
+}
+
 case class RawCommand(data: String) extends Command {
   def name: Buf = Buf.Utf8(data)
 }
+

@@ -60,6 +60,9 @@ private[samantha] object Stage {
     }
   }
   
+  def readAllBytes(process: Buf => NextStep): Stage =
+    Stage { reader => process(reader.readAll) }
+  
   /**
     * Read a line, terminated by LF or CR/LF and pass that line (stripping the CL/RF bytes)
     * as a UTF-8 string to the next processing step.

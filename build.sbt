@@ -57,7 +57,14 @@ lazy val core = project
       "io.circe" %% "circe-generic" % versions.circe,
       "io.circe" %% "circe-parser" % versions.circe,
       "io.circe" %% "circe-optics" % versions.circe
-    )
+    ),
+    initialCommands in console :=
+      """
+        |import com.twitter.conversions.time._
+        |import com.twitter.finagle.Samantha
+        |import com.twitter.finagle.samantha.protocol._
+        |import com.twitter.util._
+      """.stripMargin
   )
 
 lazy val appletv = project

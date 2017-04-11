@@ -4,6 +4,7 @@ import com.twitter.finagle.{ ClientConnection, Service, ServiceFactory, Stack, S
 import com.twitter.finagle.dispatch.PipeliningDispatcher
 import com.twitter.finagle.param.Stats
 import com.twitter.finagle.pool.SingletonPool
+import com.twitter.finagle.samantha.feedback._
 import com.twitter.finagle.samantha.protocol._
 import com.twitter.finagle.stats.StatsReceiver
 import com.twitter.finagle.util.DefaultTimer
@@ -28,8 +29,9 @@ object ConnectionPool {
     transport: Transport[Command, Feedback],
     statsReceiver: StatsReceiver): Service[Command, Feedback] =
     useFor() match {
-      case Some(Network) => new PipeliningDispatcher(transport, statsReceiver, DefaultTimer.twitter)
-      case _             => new PipeliningDispatcher(transport, statsReceiver, DefaultTimer.twitter)
+      case Some(Network) => new FeedbackDispatcher(transport)
+      case _             => new FeedbackDispatcher(transport)
+      //case _             => new PipeliningDispatcher(transport, statsReceiver, DefaultTimer.twitter)
     }
   
   def module: Stackable[ServiceFactory[Command, Feedback]] =
