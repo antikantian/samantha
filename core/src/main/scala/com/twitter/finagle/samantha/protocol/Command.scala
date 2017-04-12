@@ -5,27 +5,26 @@ import com.twitter.io.Buf
 abstract class Command {
   def name: Buf
   def body: Seq[Buf] = Seq.empty
+  def prefix: Option[String] = None
+  def suffix: Option[String] = None
 }
 
 object Command {
   
   val EOL = Buf.Utf8("\r\n")
   val CR  = Buf.Utf8("\r")
-  val ARG_COUNT         = Buf.Utf8("*")
-  val ARG_SIZE          = Buf.Utf8("$")
   
   private[samantha] def encode(c: Command): Buf = {
-    val args = c.name +: c.body
+    val command = c.name +: c.body
+    val prefix = Buf.Utf8(c.prefix.getOrElse(""))
+    val suffix = Buf.Utf8(c.suffix.getOrElse(""))
     
-    val header: Vector[Buf] = Vector(
-      ARG_COUNT, Buf.Utf8(args.length.toString), EOL)
-    
-    val bufs = args.flatMap { arg =>
-      Vector(arg, CR)
+    val bufs = command flatMap { cmd =>
+      Vector(prefix, cmd, suffix)
     }
-    
     Buf(bufs)
   }
+  
 }
 
 case class GlobalCacheCommand(data: String) extends Command {
