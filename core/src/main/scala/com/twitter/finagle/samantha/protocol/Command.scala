@@ -2,11 +2,11 @@ package com.twitter.finagle.samantha.protocol
 
 import com.twitter.io.Buf
 
-abstract class Command {
+trait Command {
   def name: Buf
-  def body: Seq[Buf] = Seq.empty
-  def prefix: Option[String] = None
-  def suffix: Option[String] = None
+  def body: Seq[Buf]
+  def prefix: Option[String]
+  def suffix: Option[String]
 }
 
 object Command {
@@ -28,18 +28,31 @@ object Command {
 }
 
 case class GlobalCacheCommand(data: String) extends Command {
-  def name: Buf = Buf.Utf8(data)
+  val name: Buf = Buf.Utf8(data)
+  val body: Seq[Buf] = Seq.empty[Buf]
+  val prefix: Option[String] = None
+  val suffix: Option[String] = None
+  
 }
 
 case class HexCommand(data: String) extends Command {
   def name: Buf = Buf.Utf8(data)
+  val body: Seq[Buf] = Seq.empty[Buf]
+  val prefix: Option[String] = None
+  val suffix: Option[String] = None
 }
 
 case class NetworkCommand(data: String) extends Command {
   def name: Buf = Buf.Utf8(data)
+  val body: Seq[Buf] = Seq.empty[Buf]
+  val prefix: Option[String] = None
+  val suffix: Option[String] = None
 }
 
-case class RawCommand(data: String) extends Command {
-  def name: Buf = Buf.Utf8(data)
+case class RawCommand(data: String, sendBefore: Option[String], sendAfter: Option[String]) extends Command {
+  val name: Buf = Buf.Utf8(data)
+  val body: Seq[Buf] = Seq.empty[Buf]
+  val prefix: Option[String] = sendBefore
+  val suffix: Option[String] = sendAfter
 }
 
