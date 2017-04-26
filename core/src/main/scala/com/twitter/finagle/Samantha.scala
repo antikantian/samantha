@@ -6,19 +6,19 @@ import com.twitter.finagle
 import com.twitter.finagle.client._
 import com.twitter.finagle.dispatch.GenSerialClientDispatcher
 import com.twitter.finagle.netty4.Netty4Transporter
-import com.twitter.finagle.param.{ExceptionStatsHandler => _, Monitor => _, ResponseClassifier => _, Tracer => _, _}
-import com.twitter.finagle.transport.Transport
-import com.twitter.finagle.samantha.ConnectionPool
-import com.twitter.finagle.samantha.feedback.NetworkTransport
+import com.twitter.finagle.param.{ ExceptionStatsHandler => _, Monitor => _, ResponseClassifier => _, Tracer => _, _ }
+import com.twitter.finagle.samantha.Config
+import com.twitter.finagle.samantha.network._
 import com.twitter.finagle.samantha.protocol._
 import com.twitter.finagle.service.{ResponseClassifier, RetryBudget}
 import com.twitter.finagle.stats.{ExceptionStatsHandler, StatsReceiver}
 import com.twitter.finagle.tracing.Tracer
+import com.twitter.finagle.transport.Transport
 import com.twitter.io.Buf
 import com.twitter.util.{Duration, Monitor}
 
 trait SamanthaRichClient { self: Client[Command, Feedback] =>
-
+  
   def newRichClient(dest: String): samantha.Client =
     samantha.Client(newClient(dest))
   
@@ -30,22 +30,21 @@ trait SamanthaRichClient { self: Client[Command, Feedback] =>
 object Samantha extends Client[Command, Feedback] with SamanthaRichClient {
   
   object Client {
-  
+    
     val defaultParams: Stack.Params =
       StackClient.defaultParams + param.ProtocolLibrary("samantha")
-  
+    
     val newStack: Stack[ServiceFactory[Command, Feedback]] =
       StackClient.newStack
-        .insertBefore(DefaultPool.Role, ConnectionPool.module)
-  
+    
   }
   
   case class Client(
-      stack: Stack[ServiceFactory[Command, Feedback]] = Client.newStack,
-      params: Stack.Params = Client.defaultParams)
+    stack: Stack[ServiceFactory[Command, Feedback]] = Client.newStack,
+    params: Stack.Params = Client.defaultParams)
     extends StdStackClient[Command, Feedback, Client]
-    with WithDefaultLoadBalancer[Client]
-    with SamanthaRichClient {
+      with WithDefaultLoadBalancer[Client]
+      with SamanthaRichClient {
     
     protected def copy1(
       stack: Stack[ServiceFactory[Command, Feedback]] = this.stack,
@@ -58,12 +57,16 @@ object Samantha extends Client[Command, Feedback] with SamanthaRichClient {
     protected def newTransporter(addr: SocketAddress): Transporter[In, Out] =
       Netty4Transporter.framedBuf(None, addr, params)
     
-    protected def newDispatcher(transport: Transport[In, Out]): Service[Command, Feedback] =
-      ConnectionPool.newDispatcher(
-        new StageTransport(transport),
-        params[finagle.param.Stats].statsReceiver.scope(GenSerialClientDispatcher.StatsScope)
-      )
-  
+    protected def newDispatcher(transport: Transport[In, Out]): Service[Command, Feedback] = {
+      new NetworkDispatcher(new NetworkTransport(transport), Config(params))
+    }
+    
+    def withCommandPrefix(cp: String): Client =
+      configured(NetworkConfig.CommandPrefix(Option(cp)))
+    
+    def withCommandSuffix(cs: String): Client =
+      configured(NetworkConfig.CommandSuffix(Option(cs)))
+    
     override val withLoadBalancer: DefaultLoadBalancingParams[Client] =
       new DefaultLoadBalancingParams(this)
     
@@ -78,7 +81,7 @@ object Samantha extends Client[Command, Feedback] with SamanthaRichClient {
     
     override val withAdmissionControl: ClientAdmissionControlParams[Client] =
       new ClientAdmissionControlParams(this)
-  
+    
     override def withLabel(label: String): Client = super.withLabel(label)
     
     override def withStatsReceiver(statsReceiver: StatsReceiver): Client =
@@ -99,7 +102,7 @@ object Samantha extends Client[Command, Feedback] with SamanthaRichClient {
     override def withRetryBudget(budget: RetryBudget): Client = super.withRetryBudget(budget)
     
     override def withRetryBackoff(backoff: Stream[Duration]): Client = super.withRetryBackoff(backoff)
-  
+    
     override def configured[P](psp: (P, Stack.Param[P])): Client = super.configured(psp)
     
     override def filtered(filter: Filter[Command, Feedback, Command, Feedback]): Client =

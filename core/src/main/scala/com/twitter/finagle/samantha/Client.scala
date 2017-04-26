@@ -32,4 +32,5 @@ abstract class BaseClient(
       case _                          => Future.exception(new IllegalStateException)
     })
   }
+  
 }

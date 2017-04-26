@@ -1,5 +1,6 @@
 package com.twitter.finagle
-package samantha.network
+package samantha
+package network
 
 import java.util.concurrent.atomic.AtomicReference
 
@@ -17,7 +18,7 @@ sealed trait NetworkHandler {
   def onFeedback(fb: Feedback): Unit
 }
 
-class NetworkDispatcher(trans: Transport[Command, Feedback], config: NetworkConfig)
+class NetworkDispatcher(trans: Transport[Command, Feedback], config: Config)
   extends GenSerialClientDispatcher[Command, Feedback, Command, Feedback](trans) {
   
   private val handler = new AtomicReference[NetworkHandler]
@@ -28,16 +29,6 @@ class NetworkDispatcher(trans: Transport[Command, Feedback], config: NetworkConf
   private[this] def loop(): Future[Unit] = trans.read().flatMap(processAndRead)
   
   loop().onFailure { _ => trans.close() }
-  
-  //  private[this] def loop(): Unit =
-  //    trans.read().onSuccess { fb =>
-  //      println(fb)
-  //      //handler.get().onFeedback(fb)
-  //      loop()
-  //    }.onFailure {
-  //      case NonFatal(ex) =>
-  //        Option(handler.get()).foreach(_.onException(this, ex))
-  //    }
   
   protected def dispatch(req: Command, p: Promise[Feedback]): Future[Unit] = {
     trans.write(req)
@@ -53,4 +44,5 @@ class NetworkDispatcher(trans: Transport[Command, Feedback], config: NetworkConf
   override def close(deadline: com.twitter.util.Time) = {
     super.close(deadline)
   }
+  
 }

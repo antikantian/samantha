@@ -55,4 +55,3 @@ case class RawCommand(data: String, sendBefore: Option[String], sendAfter: Optio
   val prefix: Option[String] = sendBefore
   val suffix: Option[String] = sendAfter
 }
-

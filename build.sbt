@@ -14,10 +14,12 @@ lazy val versions = new {
   val finch = "0.14.0"
   val jmdns = "3.4.1"
   val monix = "2.1.1"
-  val enumeratum = "1.5.8"
+  val enumeratum = "1.5.10"
   val nscalatime = "2.16.0"
   val spire = "0.13.0"
   val squants = "1.2.0"
+  val shapeless = "2.3.2"
+  val twitterServer = "1.28.0"
 }
 
 lazy val baseSettings = Seq(
@@ -38,8 +40,10 @@ lazy val baseSettings = Seq(
     "com.github.finagle" %% "finch-sse" % versions.finch,
     "org.spire-math" %% "spire" % versions.spire,
     "io.monix" %% "monix" % versions.monix,
+    "com.chuusai" %% "shapeless" % versions.shapeless,
     "com.github.nscala-time" %% "nscala-time" % versions.nscalatime,
-    "com.typesafe" % "config" % versions.config
+    "com.typesafe" % "config" % versions.config,
+    "com.beachape" %% "enumeratum" % versions.enumeratum
   )
 )
 
@@ -77,9 +81,29 @@ lazy val appletv = project
   )
   .dependsOn(core)
 
+lazy val free = project
+  .settings(moduleName := "samantha-free")
+  .settings(baseSettings)
+  .dependsOn(core)
+
+lazy val library = project
+  .settings(moduleName := "samantha-library")
+  .settings(baseSettings)
+  .dependsOn(core)
+
+lazy val pioneervsx = project
+  .settings(moduleName := "samantha-pioneer-vsx")
+  .settings(baseSettings)
+  .dependsOn(core)
+
 lazy val server = project
   .settings(moduleName := "samantha-server")
   .settings(baseSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      "com.twitter" %% "twitter-server" % versions.twitterServer
+    )
+  )
   .dependsOn(core)
 
 
