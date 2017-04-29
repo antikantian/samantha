@@ -29,5 +29,6 @@ object Input {
   case object SAT extends Input
   case object Sky extends Input
   case object UnknownSource extends Input
+  case class Other(src: String) extends Input
 }
 

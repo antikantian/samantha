@@ -7,7 +7,7 @@ import com.twitter.finagle.client._
 import com.twitter.finagle.dispatch.GenSerialClientDispatcher
 import com.twitter.finagle.netty4.Netty4Transporter
 import com.twitter.finagle.param.{ ExceptionStatsHandler => _, Monitor => _, ResponseClassifier => _, Tracer => _, _ }
-import com.twitter.finagle.samantha.Config
+import com.twitter.finagle.samantha.{ Config, Incoming, Outgoing }
 import com.twitter.finagle.samantha.network._
 import com.twitter.finagle.samantha.protocol._
 import com.twitter.finagle.service.{ResponseClassifier, RetryBudget}
@@ -17,7 +17,7 @@ import com.twitter.finagle.transport.Transport
 import com.twitter.io.Buf
 import com.twitter.util.{Duration, Monitor}
 
-trait SamanthaRichClient { self: Client[Command, Feedback] =>
+trait SamanthaRichClient { self: Client[Buf, Buf] =>
   
   def newRichClient(dest: String): samantha.Client =
     samantha.Client(newClient(dest))
@@ -27,27 +27,35 @@ trait SamanthaRichClient { self: Client[Command, Feedback] =>
   
 }
 
-object Samantha extends Client[Command, Feedback] with SamanthaRichClient {
+object Samantha extends Client[Buf, Buf] with SamanthaRichClient {
+
+  val client: Samantha.Client = Client()
+  
+  def newClient(dest: Name, label: String): ServiceFactory[Buf, Buf] =
+    client.newClient(dest, label)
+  
+  def newService(dest: Name, label: String): Service[Buf, Buf] =
+    client.newService(dest, label)
   
   object Client {
     
     val defaultParams: Stack.Params =
       StackClient.defaultParams + param.ProtocolLibrary("samantha")
     
-    val newStack: Stack[ServiceFactory[Command, Feedback]] =
+    val newStack: Stack[ServiceFactory[Buf, Buf]] =
       StackClient.newStack
     
   }
   
   case class Client(
-    stack: Stack[ServiceFactory[Command, Feedback]] = Client.newStack,
+    stack: Stack[ServiceFactory[Buf, Buf]] = Client.newStack,
     params: Stack.Params = Client.defaultParams)
-    extends StdStackClient[Command, Feedback, Client]
+    extends StdStackClient[Buf, Buf, Client]
       with WithDefaultLoadBalancer[Client]
       with SamanthaRichClient {
     
     protected def copy1(
-      stack: Stack[ServiceFactory[Command, Feedback]] = this.stack,
+      stack: Stack[ServiceFactory[Buf, Buf]] = this.stack,
       params: Stack.Params = this.params
     ): Client = copy(stack, params)
     
@@ -57,7 +65,7 @@ object Samantha extends Client[Command, Feedback] with SamanthaRichClient {
     protected def newTransporter(addr: SocketAddress): Transporter[In, Out] =
       Netty4Transporter.framedBuf(None, addr, params)
     
-    protected def newDispatcher(transport: Transport[In, Out]): Service[Command, Feedback] = {
+    protected def newDispatcher(transport: Transport[In, Out]): Service[Buf, Buf] = {
       new NetworkDispatcher(new NetworkTransport(transport), Config(params))
     }
     
@@ -105,17 +113,9 @@ object Samantha extends Client[Command, Feedback] with SamanthaRichClient {
     
     override def configured[P](psp: (P, Stack.Param[P])): Client = super.configured(psp)
     
-    override def filtered(filter: Filter[Command, Feedback, Command, Feedback]): Client =
+    override def filtered(filter: Filter[Buf, Buf, Buf, Buf]): Client =
       super.filtered(filter)
     
   }
-  
-  val client: Samantha.Client = Client()
-  
-  def newClient(dest: Name, label: String): ServiceFactory[Command, Feedback] =
-    client.newClient(dest, label)
-  
-  def newService(dest: Name, label: String): Service[Command, Feedback] =
-    client.newService(dest, label)
   
 }

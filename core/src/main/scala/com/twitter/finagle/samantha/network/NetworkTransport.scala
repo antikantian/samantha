@@ -11,28 +11,19 @@ import com.twitter.util.{Future, Time}
 
 private[finagle] final class NetworkTransport(
     underlying: Transport[Buf, Buf]
-) extends Transport[Command, Feedback] {
+) extends Transport[Buf, Buf] {
   
-  private[this] val redisClient = Redis.newRichClient("192.168.10.13:6379")
+  private[this] def readLoop(buf: Buf): Future[Buf] = Future.value(buf)
   
-  private[this] val decoder = new StageDecoder(Feedback.decode)
-  
-  private[this] def readLoop(buf: Buf): Future[Feedback] = decoder.absorb(buf) match {
-    case null => underlying.read().flatMap(readLoop)
-    case reply =>
-      redisClient.publish(Buf.Utf8("device1"), Buf.Utf8(reply.toString))
-      Future.value(reply)
-  }
-  
-  def sendQuery(c: Command): Future[Feedback] =
+  def sendQuery(buf: Buf): Future[Buf] =
     for {
-      _ <- write(c)
+      _ <- write(buf)
       r <- read()
     } yield r
   
-  def write(c: Command): Future[Unit] = underlying.write(Command.encode(c))
+  def write(buf: Buf): Future[Unit] = underlying.write(buf)
   
-  def read(): Future[Feedback] = readLoop(Buf.Empty)
+  def read(): Future[Buf] = readLoop(Buf.Empty)
   
   def close(deadline: Time): Future[Unit] = underlying.close(deadline)
   
